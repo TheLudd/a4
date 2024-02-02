@@ -31,7 +31,7 @@ tickit_obj	= lib/libtickit/src/bindings.o lib/libtickit/src/debug.o lib/libticki
 vterm_obj	= lib/libvterm/src/encoding.o lib/libvterm/src/keyboard.o lib/libvterm/src/parser.o \
 			  lib/libvterm/src/pen.o lib/libvterm/src/screen.o lib/libvterm/src/state.o \
 			  lib/libvterm/src/unicode.o lib/libvterm/src/vterm.o
-obj			= $(a4_obj) $(inih_obj) $(uni_obj) $(termkey_obj) $(tickit_obj) $(vterm_obj)
+obj			= $(a4_obj) $(inih_obj) $(uni_obj) $(termkey_obj) $(tickit_obj) $(vterm_obj) unique_stack.o
 
 all: a4 extras/a4-keycodes
 

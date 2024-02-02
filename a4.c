@@ -309,6 +309,9 @@ LAYOUTS(XLAYOUT)
 #include "config.c"
 #include "vt.c"
 #include "lib/libvterm/src/utf8.h"
+#include "unique_stack.h"
+
+UniqueStack *tag_stack = NULL;
 
 /* functions */
 static void curkeyscpy(const char *str) {
@@ -1149,8 +1152,14 @@ static void destroy_tframe(TFrame *tframe) {
 	if(!tframes)
 		quit(NULL);
 	else {
-		if (sel == NULL) 
-			viewset(config.tagnames[pertag.prevtag - 1]);
+		if (sel == NULL) {
+			unique_stack_pop(tag_stack);
+			int prev_tag = unique_stack_top(tag_stack);
+			if (prev_tag != -1) {
+				viewset(config.tagnames[prev_tag]);
+			}
+			fflush(stderr);
+		}
 		tagschanged();
 	}
 }
@@ -1384,6 +1393,19 @@ unsigned int count_clients_by_tag(const char *tagName) {
 }
 
 static void viewset(char *tagname) {
+	if (tagname != NULL) {
+		int tag_index = -1;
+		for (unsigned int i = 0; i < config.ntags; i++) {
+			if (strcmp(config.tagnames[i], tagname) == 0) {
+				tag_index = i;
+				break;
+			}
+		}
+		if (tag_index != -1) {
+			unique_stack_push(tag_stack, tag_index);
+		}
+	}
+
 	unsigned int newtagset = bitoftag(tagname) & TAGMASK;
 	if (newtagset && tagset[seltags] != newtagset) {
 		seltags ^= 1; /* toggle sel tagset */
@@ -1937,6 +1959,16 @@ static void parse_args(int argc, char *argv[]) {
 	}
 }
 
+void print_stack(UniqueStack *stack) {
+    printf("Stack contents (top to bottom):\n");
+    while (stack->top != -1) { // Continue until the stack is empty
+        int tag = unique_stack_pop(stack); // Pop the top item
+        if (tag != -1) { // Check if pop was successful
+            printf("%d\n", tag); // Adjust based on how tags are indexed
+        }
+    }
+}
+
 int main(int argc, char *argv[]) {
 #ifndef NDEBUG
 	tickit_debug_init();
@@ -1945,6 +1977,8 @@ int main(int argc, char *argv[]) {
 	if (getenv("A4"))
 		usage("Cannot run a4 inside of a4");
 	setenv("A4", VERSION, 1);
+	tag_stack = unique_stack_create(10);
+	unique_stack_push(tag_stack, 0);
 	parse_args(argc, argv);
 	startup_a4();
 
@@ -1972,6 +2006,7 @@ int main(int argc, char *argv[]) {
 		tickit_tick(root.tickit, 0);
 	}
 
+	unique_stack_destroy(tag_stack);
 	shutdown_a4();
 	return 0;
 }
