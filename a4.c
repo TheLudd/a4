@@ -1149,6 +1149,8 @@ static void destroy_tframe(TFrame *tframe) {
 	if(!tframes)
 		quit(NULL);
 	else {
+		if (sel == NULL) 
+			viewset(config.tagnames[pertag.prevtag - 1]);
 		tagschanged();
 	}
 }
@@ -1368,6 +1370,19 @@ static void viewswap(void) {
 	tagschanged();
 }
 
+unsigned int count_clients_by_tag(const char *tagName) {
+	unsigned int tagToView = bitoftag(tagName); // Convert tag name to its bitmask representation
+	unsigned int count = 0;
+
+	for (TFrame *tframe = tframes; tframe; tframe = tframe->next) {
+		if (tframe->tags & tagToView) { // Check if tframe is associated with the tag
+			count++;
+		}
+	}
+
+	return count; // Return the count of tframes associated with the tag
+}
+
 static void viewset(char *tagname) {
 	unsigned int newtagset = bitoftag(tagname) & TAGMASK;
 	if (newtagset && tagset[seltags] != newtagset) {
@@ -1381,6 +1396,11 @@ static void viewset(char *tagname) {
 		set_pertag();
 		tagset[seltags] = newtagset;
 		tagschanged();
+	}
+
+	unsigned int clientsCount = count_clients_by_tag(tagname);
+	if (clientsCount == 0) {
+		create(NULL);
 	}
 }
 
